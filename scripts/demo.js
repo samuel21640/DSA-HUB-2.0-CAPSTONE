@@ -6,15 +6,22 @@ import {
   createStore,
   findBookingByReference,
   joinWaitlist,
+  publishEvent,
 } from '../src/domain/inventory.js';
 
 const store = createStore();
-const event = createEvent(store, { name: 'Summer Sounds' });
+const event = createEvent(store, {
+  title: 'Summer Sounds',
+  city: 'Lagos',
+  venue: 'City Arena',
+  date: '2026-12-05T17:00:00.000Z',
+});
 const tier = addTier(store, event.id, {
   name: 'General admission',
   priceCents: 2500,
   capacity: 3,
 });
+publishEvent(store, event.id);
 
 console.log(`Event: ${event.name} (${tier.capacity} seats)`);
 
@@ -68,4 +75,4 @@ console.log(`Lookup by reference found ${foundBooking.attendeeName}'s booking.`)
 cancelBooking(store, adaBooking.id);
 const nextInLine = store.waitlists.get(tier.id).peek();
 console.log(`${adaBooking.attendeeName} cancels. Next in line: ${nextInLine.attendeeName}.`);
-console.log(`Bayo's booking remains active: ${bayoBooking.status}.`);
+console.log(`Bayo's booking remains ${bayoBooking.status}.`);

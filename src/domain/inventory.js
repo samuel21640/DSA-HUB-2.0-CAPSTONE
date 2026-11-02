@@ -1,6 +1,7 @@
 import { DomainError } from './errors.js';
 import { newId, newReference } from './ids.js';
 import { Queue } from './waitlistQueue.js';
+import { parseISODate } from './dates.js';
 
 const MAX_TICKETS_PER_BOOKING = 10;
 
@@ -77,15 +78,78 @@ export function createStore() {
 export function createEvent(store, input) {
   requireStore(store);
   requireRecord(input, 'Event');
-  const name = requireNonEmptyString(input.name, 'Event name');
+  const title = requireNonEmptyString(input.title, 'Event title');
+  const city = requireNonEmptyString(input.city, 'Event city');
+  const venue = requireNonEmptyString(input.venue, 'Event venue');
+  const date = requireNonEmptyString(input.date, 'Event date');
+  parseISODate(date, 'Event date');
   const event = {
     id: newId(),
-    name,
+    title,
+    name: title,
+    city,
+    venue,
+    date,
+    published: false,
+    status: 'draft',
     tiers: new Map(),
   };
 
   store.events.set(event.id, event);
   return event;
+}
+
+export function publishEvent(store, eventId) {
+  requireStore(store);
+  const event = getEvent(store, eventId);
+  if (event.tiers.size === 0) {
+    throw new DomainError('An event needs at least one ticket tier before it can be published.', 'INVALID_STATE');
+  }
+
+  event.published = true;
+  event.status = 'published';
+  return event;
+}
+
+export function listEventSummaries(store, options = {}) {
+  requireStore(store);
+  requireRecord(options, 'Summary options');
+  const { publishedOnly = true } = options;
+  if (typeof publishedOnly !== 'boolean') {
+    invalid('publishedOnly must be a boolean.');
+  }
+
+  const summaries = [];
+  for (const event of store.events.values()) {
+    if (publishedOnly && !event.published) {
+      continue;
+    }
+
+    const tiers = Array.from(event.tiers.values(), (tier) => ({ ...tier }));
+    let cheapestTierPriceCents = null;
+    let availableSeats = 0;
+    for (const tier of tiers) {
+      if (cheapestTierPriceCents === null || tier.priceCents < cheapestTierPriceCents) {
+        cheapestTierPriceCents = tier.priceCents;
+      }
+      availableSeats += tier.available;
+    }
+
+    summaries.push({
+      id: event.id,
+      title: event.title,
+      name: event.name,
+      city: event.city,
+      venue: event.venue,
+      date: event.date,
+      published: event.published,
+      status: event.status,
+      tiers,
+      cheapestTierPriceCents,
+      availableSeats,
+    });
+  }
+  return summaries;
 }
 
 export function addTier(store, eventId, input) {
@@ -107,6 +171,7 @@ export function addTier(store, eventId, input) {
     priceCents,
     capacity,
     available: capacity,
+    sold: 0,
   };
 
   event.tiers.set(tier.id, tier);
@@ -121,6 +186,9 @@ export function bookTickets(store, input) {
   const attendeeName = requireNonEmptyString(input.attendeeName, 'Attendee name');
   const quantity = requirePositiveInteger(input.quantity, 'Ticket quantity');
 
+  if (!event.published) {
+    throw new DomainError('Tickets cannot be booked before the event is published.', 'INVALID_STATE');
+  }
   if (quantity > MAX_TICKETS_PER_BOOKING) {
     invalid(`A booking cannot contain more than ${MAX_TICKETS_PER_BOOKING} tickets.`);
   }
@@ -145,7 +213,7 @@ export function bookTickets(store, input) {
     attendeeName,
     quantity,
     totalCents,
-    status: 'active',
+    status: 'pending',
   };
 
   while (store.bookingsByReference.has(booking.reference)) {
@@ -153,6 +221,7 @@ export function bookTickets(store, input) {
   }
 
   tier.available -= quantity;
+  tier.sold += quantity;
   store.bookings.set(booking.id, booking);
   store.bookingsByReference.set(booking.reference, booking);
   return booking;
@@ -165,8 +234,11 @@ export function cancelBooking(store, bookingId) {
   if (!booking) {
     throw new DomainError(`Booking "${id}" was not found.`, 'NOT_FOUND');
   }
-  if (booking.status !== 'active') {
+  if (booking.status === 'cancelled') {
     throw new DomainError('Booking has already been cancelled.', 'ALREADY_CANCELLED');
+  }
+  if (booking.status !== 'pending' && booking.status !== 'active') {
+    throw new DomainError('Booking cannot be cancelled in its current state.', 'INVALID_STATE');
   }
 
   const event = getEvent(store, booking.eventId);
@@ -176,6 +248,7 @@ export function cancelBooking(store, bookingId) {
   }
 
   tier.available += booking.quantity;
+  tier.sold -= booking.quantity;
   booking.status = 'cancelled';
   return booking;
 }
