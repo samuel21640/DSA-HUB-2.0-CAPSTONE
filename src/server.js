@@ -2,8 +2,24 @@ import { createServer } from 'node:http';
 import { pathToFileURL } from 'node:url';
 import { config } from './config.js';
 import { createApp } from './http/app.js';
+import { createRouter } from './http/router.js';
+import { registerApiRoutes } from './http/apiRoutes.js';
+import { createMockPaymentGateway } from './lib/mockPaymentGateway.js';
+import { createMemoryRepository } from './repositories/memory.js';
+import { createBookingService } from './services/bookingService.js';
+import { createEventService } from './services/eventService.js';
 
-export function startServer({ port = config.port, app = createApp() } = {}) {
+export function createServerApp({
+  repository = createMemoryRepository(),
+  paymentGateway = createMockPaymentGateway(),
+} = {}) {
+  const eventService = createEventService(repository);
+  const bookingService = createBookingService(repository, paymentGateway);
+  const router = registerApiRoutes(createRouter(), { eventService, bookingService });
+  return createApp({ router });
+}
+
+export function startServer({ port = config.port, app = createServerApp() } = {}) {
   const server = createServer(app);
   server.listen(port, () => {
     console.log(`Event Ticketing server listening on port ${server.address().port}.`);

@@ -140,13 +140,19 @@ async function serveStatic(request, response, publicDir, pathname) {
 }
 
 function statusForDomainError(error) {
-  if (error.code === 'NOT_FOUND') {
-    return 404;
-  }
-  if (error.code === 'FORBIDDEN') {
-    return 403;
-  }
-  return 400;
+  const statuses = {
+    NOT_FOUND: 404,
+    FORBIDDEN: 403,
+    UNAUTHENTICATED: 401,
+    SOLD_OUT: 409,
+    INVALID_STATE: 409,
+    INVALID_TRANSITION: 409,
+    ALREADY_CANCELLED: 409,
+    PAYMENT_DECLINED: 402,
+    PAYMENT_ERROR: 502,
+    INVARIANT: 409,
+  };
+  return Object.hasOwn(statuses, error.code) ? statuses[error.code] : 400;
 }
 
 export function createApp({ publicDir = DEFAULT_PUBLIC_DIR, router = createRouter() } = {}) {
