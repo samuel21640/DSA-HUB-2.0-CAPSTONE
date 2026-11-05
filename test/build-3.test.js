@@ -10,7 +10,8 @@ import { DomainError } from '../src/domain/errors.js';
 import { createConfig } from '../src/config.js';
 import { createApp } from '../src/http/app.js';
 import { createRouter } from '../src/http/router.js';
-import { startServer } from '../src/server.js';
+import { createServerApp, startServer } from '../src/server.js';
+import { createMemoryRepository } from '../src/repositories/memory.js';
 
 test('configuration defaults to port 3000 and validates PORT', () => {
   assert.deepEqual(createConfig({}), { port: 3000 });
@@ -61,7 +62,10 @@ test('router matches methods, static paths, and decoded path parameters', () => 
 });
 
 test('HTTP server answers a real GET /health request', async (t) => {
-  const server = startServer({ port: 0 });
+  const server = startServer({
+    port: 0,
+    app: createServerApp({ repository: createMemoryRepository() }),
+  });
   await once(server, 'listening');
   t.after(() => new Promise((resolve, reject) => {
     server.close((error) => (error ? reject(error) : resolve()));

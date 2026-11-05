@@ -5,12 +5,12 @@ import { createApp } from './http/app.js';
 import { createRouter } from './http/router.js';
 import { registerApiRoutes } from './http/apiRoutes.js';
 import { createMockPaymentGateway } from './lib/mockPaymentGateway.js';
-import { createMemoryRepository } from './repositories/memory.js';
+import { createSqliteRepository } from './repositories/sqlite.js';
 import { createBookingService } from './services/bookingService.js';
 import { createEventService } from './services/eventService.js';
 
 export function createServerApp({
-  repository = createMemoryRepository(),
+  repository = createSqliteRepository(),
   paymentGateway = createMockPaymentGateway(),
 } = {}) {
   const eventService = createEventService(repository);

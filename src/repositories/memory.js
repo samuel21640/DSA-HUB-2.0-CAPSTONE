@@ -1,3 +1,5 @@
+import { DomainError } from '../domain/errors.js';
+
 function copy(record) {
   return record === undefined ? undefined : { ...record };
 }
@@ -28,6 +30,16 @@ export function createMemoryRepository() {
 
     async getTier(id) {
       return copy(tiers.get(id));
+    },
+
+    async reserveTierSeats(id, quantity) {
+      const tier = tiers.get(id);
+      if (!tier || tier.available < quantity) {
+        throw new DomainError('There are not enough tickets remaining.', 'SOLD_OUT');
+      }
+      tier.available -= quantity;
+      tier.sold += quantity;
+      return copy(tier);
     },
 
     async listTiersForEvent(eventId) {

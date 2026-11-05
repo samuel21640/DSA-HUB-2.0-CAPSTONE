@@ -6,7 +6,8 @@ import { createMemoryRepository } from '../src/repositories/memory.js';
 import { createMockPaymentGateway } from '../src/lib/mockPaymentGateway.js';
 
 async function startTestServer(options = {}) {
-  const server = startServer({ port: 0, ...options });
+  const app = options.app ?? createServerApp({ repository: createMemoryRepository() });
+  const server = startServer({ port: 0, ...options, app });
   await once(server, 'listening');
   const baseUrl = `http://127.0.0.1:${server.address().port}`;
   return {

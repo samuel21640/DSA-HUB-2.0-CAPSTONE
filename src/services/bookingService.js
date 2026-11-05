@@ -59,12 +59,6 @@ export function createBookingService(repository, paymentGateway) {
       if (!tier || tier.eventId !== event.id) {
         throw new DomainError(`Tier "${tierId}" was not found.`, 'NOT_FOUND');
       }
-      if (tier.available < quantity) {
-        throw new DomainError(
-          `Only ${tier.available} ticket(s) remain in "${tier.name}".`,
-          'SOLD_OUT',
-        );
-      }
 
       const totalCents = tier.priceCents * quantity;
       if (!Number.isSafeInteger(totalCents)) {
@@ -87,9 +81,7 @@ export function createBookingService(repository, paymentGateway) {
         status: 'pending',
       };
 
-      tier.available -= quantity;
-      tier.sold += quantity;
-      await repository.saveTier(tier);
+      await repository.reserveTierSeats(tier.id, quantity);
       await repository.saveBooking(booking);
       return booking;
     },
