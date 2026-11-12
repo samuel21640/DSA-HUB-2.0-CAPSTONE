@@ -3,12 +3,65 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Event Ticketing</title>
+    <meta name="theme-color" content="#102a43">
+    <title>Discover events | Gather</title>
+    <link rel="stylesheet" href="./css/styles.css">
+    <script type="module" src="./js/pages/home.js"></script>
   </head>
   <body>
-    <main>
-      <h1>Event Ticketing</h1>
-      <p>The server is running.</p>
+    <header class="site-header">
+      <a class="brand" href="./index.html" aria-label="Gather home">Gather<span>.</span></a>
+      <nav aria-label="Main navigation">
+        <a href="./index.html" aria-current="page">Discover</a>
+      </nav>
+    </header>
+    <main id="app" class="page-shell">
+      <section class="page-intro" aria-labelledby="page-title">
+        <p class="eyebrow">Make room for a good time</p>
+        <h1 id="page-title">Find your next<br>great experience.</h1>
+        <p class="intro-copy">Explore live music, ideas, food and more happening near you.</p>
+      </section>
+      <section class="filter-panel" aria-label="Find events">
+        <form id="filters" class="filter-form">
+          <div class="field">
+            <label for="search">Search events</label>
+            <input id="search" name="q" type="search" placeholder="Title or venue">
+          </div>
+          <div class="field">
+            <label for="city">City</label>
+            <select id="city" name="city">
+              <option value="">All cities</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="max-price">Maximum price (₦)</label>
+            <input id="max-price" name="maxPrice" type="number" min="0" step="0.01" inputmode="decimal" placeholder="Any price">
+          </div>
+          <div class="field">
+            <label for="sort">Sort by</label>
+            <select id="sort" name="sortBy">
+              <option value="date">Soonest</option>
+              <option value="price">Lowest price</option>
+              <option value="availability">Most seats</option>
+            </select>
+          </div>
+          <button class="button button-primary filter-button" type="submit">Find events</button>
+        </form>
+      </section>
+      <section class="results-section" aria-labelledby="results-title">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">The line-up</p>
+            <h2 id="results-title">Upcoming events</h2>
+          </div>
+          <p id="result-count" class="result-count" aria-live="polite"></p>
+        </div>
+        <p id="status" class="notice" role="status" hidden></p>
+        <div id="events" class="event-grid"></div>
+      </section>
     </main>
+    <footer class="site-footer">
+      <p>Good plans start here. <span>Gather.</span></p>
+    </footer>
   </body>
 </html>

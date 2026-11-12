@@ -18,3 +18,8 @@
 - **What came back:** It added the SQLite schema and repository, switched the server's default repository to SQLite, added seed and oversell scripts, and covered persistence and database constraints with a test.
 - **What was wrong (or "nothing"):** The initial API tests assumed each server used an empty in-memory repository. I kept those tests isolated with the memory repository and verified persistence separately. The first demo reproduced overselling: 50 requests succeeded, creating bookings for 99 seats total when only 50 were available. In the follow-up, I moved reservation into one conditional SQLite `UPDATE` and added a 50-request regression test; the demo then showed one success and 49 `SOLD_OUT` results, with 50 seats sold total.
 - **Why not a lock variable or a second check:** A JavaScript lock variable only coordinates calls that share that one process and can be bypassed by another server process or direct database writer. A second read/check still has a race between checking capacity and writing it, so only the conditional database update makes checking and reserving one atomic operation.
+
+## Build 6
+- **What I asked:** I asked the co-pilot to build the plain HTML, CSS and JavaScript frontend on mock event data, including search, filters, ticket booking and mock payment.
+- **What came back:** It added the browse and event pages, accessible DOM helpers, a mock API, styles and focused tests.
+- **What was wrong (or "nothing"):** The Build 4 booking response does not include a seat-hold deadline, but Build 6 requires a checkout countdown. I kept all existing booking fields and added a mock-only `holdExpiresAt` value so the countdown, expiry and seat release work together. The hold lasts 10 minutes.
